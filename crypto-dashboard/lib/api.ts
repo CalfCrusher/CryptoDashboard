@@ -196,6 +196,35 @@ export async function fetchBTCDominance(): Promise<number> {
 }
 
 /**
+ * Robust BTC dominance with fallback:
+ * 1. Try global endpoint (fast timeout)
+ * 2. If fails, approximate using market caps from current marketData (BTC market cap / sum tracked caps * 100)
+ * 3. If still impossible, return previous or neutral 50
+ */
+export async function getBTCDominanceWithFallback(marketData?: CoinGeckoMarketData[], prevValue?: number): Promise<number> {
+  // Attempt primary source with short timeout
+  try {
+    const response = await axios.get(`${COINGECKO_API}/global`, { timeout: 7000 });
+    const v = response.data?.data?.market_cap_percentage?.btc;
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+  } catch (e) {
+    // Silent; we'll fallback
+  }
+
+  // Fallback using provided marketData
+  if (marketData && marketData.length > 0) {
+    const btc = marketData.find(m => m.id === 'bitcoin');
+    const sumCaps = marketData.reduce((s, m) => s + (m.market_cap || 0), 0);
+    if (btc && sumCaps > 0) {
+      const approx = (btc.market_cap / sumCaps) * 100;
+      return Number.isFinite(approx) ? approx : (prevValue ?? 50);
+    }
+  }
+
+  return prevValue ?? 50; // neutral fallback
+}
+
+/**
  * Calculate correlation between two price series
  */
 export function calculateCorrelation(prices1: number[], prices2: number[]): number {

@@ -92,12 +92,20 @@ export function useDashboardData() {
       });
 
       // Fetch market overview data
-      const [assetAnalyses, btcDominance, correlationMatrix, altseasonIndicator] = await Promise.all([
+      const [assetAnalyses, correlationMatrix, altseasonIndicator] = await Promise.all([
         Promise.all(assetAnalysisPromises),
-        fetchBTCDominance(),
         buildCorrelationMatrix(),
         calculateAltseasonIndicator()
       ]);
+
+      // BTC dominance with fallback using current marketData
+      let btcDominance = 0;
+      try {
+        const { getBTCDominanceWithFallback } = await import('@/lib/api');
+        btcDominance = await getBTCDominanceWithFallback(marketData, data.marketOverview?.btcDominance);
+      } catch {
+        btcDominance = data.marketOverview?.btcDominance || 50;
+      }
 
       // Filter out failed analyses
       const validAnalyses = assetAnalyses.filter((a): a is AssetAnalysis => a !== null);
