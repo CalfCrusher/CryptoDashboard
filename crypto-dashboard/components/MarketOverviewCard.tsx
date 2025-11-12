@@ -55,7 +55,7 @@ export default function MarketOverviewCard({ overview, lastUpdate, missedUpdates
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* BTC Dominance */}
         <div className="bg-gray-800 rounded-lg p-4">
           <div className="text-sm text-gray-400 mb-2">BTC Dominance</div>
@@ -98,6 +98,27 @@ export default function MarketOverviewCard({ overview, lastUpdate, missedUpdates
               style={{ width: `${overview.altseasonIndicator}%` }}
             />
           </div>
+        </div>
+
+        {/* Fear & Greed */}
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="text-sm text-gray-400 mb-2">Fear & Greed</div>
+          {overview.fearGreed ? (
+            <>
+              <div className="flex items-baseline gap-2 mb-2">
+                <div className="text-3xl font-bold text-white">{overview.fearGreed.value}</div>
+                <div className="text-sm text-gray-300">{overview.fearGreed.classification}</div>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${overview.fearGreed.value >= 60 ? 'bg-green-500' : overview.fearGreed.value >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${Math.min(100, Math.max(0, overview.fearGreed.value))}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-gray-500">—</div>
+          )}
         </div>
       </div>
 

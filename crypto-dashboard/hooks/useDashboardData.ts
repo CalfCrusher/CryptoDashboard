@@ -92,10 +92,12 @@ export function useDashboardData() {
       });
 
       // Fetch market overview data
-      const [assetAnalyses, correlationMatrix, altseasonIndicator] = await Promise.all([
+      const [assetAnalyses, correlationMatrix, altseasonIndicator, fearGreedResp] = await Promise.all([
         Promise.all(assetAnalysisPromises),
         buildCorrelationMatrix(),
-        calculateAltseasonIndicator()
+        calculateAltseasonIndicator(),
+        // fetch fear-greed from our server API to avoid CORS and allow caching
+        fetch('/api/fear-greed').then(r => r.ok ? r.json() : Promise.reject(new Error('FGN fetch failed'))).catch(() => ({ data: { value: 50, classification: 'Neutral', updatedAt: Date.now() }}))
       ]);
 
       // BTC dominance with fallback using current marketData
@@ -116,7 +118,12 @@ export function useDashboardData() {
         btcDominance,
         totalMarketCap,
         altseasonIndicator,
-        correlationMatrix
+        correlationMatrix,
+        fearGreed: fearGreedResp?.data ? {
+          value: Number(fearGreedResp.data.value) || 50,
+          classification: String(fearGreedResp.data.classification || 'Neutral'),
+          updatedAt: typeof fearGreedResp.data.updatedAt === 'number' ? fearGreedResp.data.updatedAt : Date.now()
+        } : undefined
       };
 
       setData({

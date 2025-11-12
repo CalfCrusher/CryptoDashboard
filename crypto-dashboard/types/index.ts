@@ -135,6 +135,11 @@ export interface MarketOverview {
   totalMarketCap: number;
   altseasonIndicator: number; // 0-100
   correlationMatrix: Record<string, Record<string, number>>;
+  fearGreed?: {
+    value: number; // 0-100
+    classification: string; // e.g., Extreme Fear, Fear, Neutral, Greed, Extreme Greed
+    updatedAt?: number;
+  };
 }
 
 // Multi-Timeframe Data
