@@ -48,6 +48,67 @@ export async function fetchMarketData(): Promise<CoinGeckoMarketData[]> {
 }
 
 /**
+ * Fetch top altcoin movers from CoinGecko across a broader universe (default top 250 by market cap)
+ * Filters out BTC/ETH and common stablecoins; applies basic liquidity filters.
+ */
+export async function fetchTopAltcoinMovers(options?: {
+  perPage?: number;          // how many coins to fetch from CG (max 250)
+  limit?: number;            // how many movers to return
+  minMarketCapUSD?: number;  // filter out micro-caps
+  minVolume24hUSD?: number;  // filter out illiquid
+  absoluteChange?: boolean;  // sort by absolute 24h % move
+}): Promise<CoinGeckoMarketData[]> {
+  const {
+    perPage = 250,
+    limit = 12,
+    minMarketCapUSD = 150_000_000,
+    minVolume24hUSD = 10_000_000,
+    absoluteChange = true,
+  } = options || {};
+
+  const STABLE_IDS = new Set([
+    'tether', 'usd-coin', 'binance-usd', 'dai', 'frax', 'true-usd', 'pax-dollar',
+    'gemini-dollar', 'first-digital-usd', 'usdd', 'terrausd', 'neutrino', 'lusd', 'gusd'
+  ]);
+
+  try {
+    const response = await axios.get(`${COINGECKO_API}/coins/markets`, {
+      params: {
+        vs_currency: 'usd',
+        order: 'market_cap_desc',
+        per_page: Math.min(Math.max(perPage, 1), 250),
+        page: 1,
+        sparkline: false,
+        price_change_percentage: '24h',
+      }
+    });
+
+    const rows: CoinGeckoMarketData[] = response.data;
+    const filtered = rows.filter((c) => {
+      const id = c.id.toLowerCase();
+      if (id === 'bitcoin' || id === 'ethereum') return false; // exclude majors
+      if (STABLE_IDS.has(id)) return false; // exclude stables
+      if (!Number.isFinite(c.price_change_percentage_24h)) return false;
+      if ((c.market_cap || 0) < minMarketCapUSD) return false;
+      if ((c.total_volume || 0) < minVolume24hUSD) return false;
+      return true;
+    });
+
+    const sorted = filtered.sort((a, b) => {
+      const pa = a.price_change_percentage_24h || 0;
+      const pb = b.price_change_percentage_24h || 0;
+      if (absoluteChange) return Math.abs(pb) - Math.abs(pa);
+      return pb - pa; // positive movers only
+    });
+
+    return sorted.slice(0, limit);
+  } catch (error) {
+    console.error('Error fetching top altcoin movers from CoinGecko:', error);
+    return [];
+  }
+}
+
+/**
  * Fetch OHLCV data from Binance
  * @param symbol - Trading pair (e.g., BTCUSDT)
  * @param interval - Timeframe (1h, 4h, 1d)

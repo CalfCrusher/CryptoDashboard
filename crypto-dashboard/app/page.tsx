@@ -10,6 +10,7 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import DetailedAnalysisModal from '@/components/DetailedAnalysisModal';
 import { AssetAnalysis } from '@/types';
 import MarketInsights from '@/components/MarketInsights';
+import TopAltcoinMovers from '@/components/TopAltcoinMovers';
 
 export default function Home() {
   const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh } = useDashboardData();
@@ -156,6 +157,8 @@ export default function Home() {
                 if (found) setSelectedAsset(found);
               }}
             />
+
+            <TopAltcoinMovers />
 
             <SignalTable analyses={assets} />
             <MomentumHeatMap analyses={assets} />
