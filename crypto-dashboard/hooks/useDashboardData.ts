@@ -35,8 +35,12 @@ export function useDashboardData() {
     try {
       setData(prev => ({ ...prev, isLoading: true, error: undefined }));
 
-      // Fetch market data for all assets
-      const marketData = await fetchMarketData();
+  // Fetch market data for all assets via server API (avoid client CORS/rate limits)
+  const ids = TOP_ASSETS.map(a => a.id).join(',');
+  const marketResp = await fetch(`/api/market-data?ids=${encodeURIComponent(ids)}`);
+  if (!marketResp.ok) throw new Error('Market data fetch failed');
+  const marketJson = await marketResp.json();
+  const marketData = marketJson.data as ReturnType<typeof fetchMarketData> extends Promise<infer T> ? T : never;
       
       // Fetch OHLCV data (primary timeframe + 5m for spike detection) and analyze each asset
       const assetAnalysisPromises = TOP_ASSETS.map(async (asset) => {
