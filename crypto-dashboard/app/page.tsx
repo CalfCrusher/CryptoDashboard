@@ -14,6 +14,7 @@ import MarketInsights from '@/components/MarketInsights';
 export default function Home() {
   const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh } = useDashboardData();
   const [selectedAsset, setSelectedAsset] = useState<AssetAnalysis | null>(null);
+  const [now, setNow] = useState<number>(Date.now());
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [focusIndex, setFocusIndex] = useState<number>(0);
 
@@ -63,6 +64,12 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handler);
   }, [assets, columns, focusIndex, isLoading, refresh]);
 
+  // Local 1s ticker so "Updated Xs ago" moves forward without waiting for data refresh
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <div className="min-h-screen p-4 md:p-8" style={{ background: 'var(--bg-base)' }}>
       <header className="mb-8">
@@ -80,8 +87,8 @@ export default function Home() {
                   {marketOverview.altseasonIndicator >= 66 ? 'Risk-On' : marketOverview.altseasonIndicator <= 33 ? 'Risk-Off' : 'Mixed'}
                 </div>
                 <div className="text-(--text-low)">Updated</div>
-                <div className="text-(--text-high) font-semibold" aria-label={`Last updated ${lastUpdate ? Math.max(0, Math.floor((Date.now() - lastUpdate)/1000)) + ' seconds ago' : 'unknown'}`}>
-                  {lastUpdate ? `${Math.max(0, Math.floor((Date.now() - lastUpdate)/1000))}s ago` : '—'}
+                <div className="text-(--text-high) font-semibold" aria-label={`Last updated ${lastUpdate ? Math.max(0, Math.floor((now - lastUpdate)/1000)) + ' seconds ago' : 'unknown'}`}>
+                  {lastUpdate ? `${Math.max(0, Math.floor((now - lastUpdate)/1000))}s ago` : '—'}
                 </div>
               </div>
             )}

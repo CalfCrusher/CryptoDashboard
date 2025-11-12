@@ -1,6 +1,7 @@
 'use client';
 
 import { MarketOverview } from '@/types';
+import { useEffect, useState } from 'react';
 
 interface MarketOverviewCardProps {
   overview: MarketOverview;
@@ -9,6 +10,11 @@ interface MarketOverviewCardProps {
 }
 
 export default function MarketOverviewCard({ overview, lastUpdate, missedUpdates }: MarketOverviewCardProps) {
+  const [now, setNow] = useState<number>(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
   const formatMarketCap = (value: number) => {
     if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
     if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
@@ -32,7 +38,7 @@ export default function MarketOverviewCard({ overview, lastUpdate, missedUpdates
     return 'Strong BTC Season';
   };
 
-  const timeSinceUpdate = lastUpdate > 0 ? Math.floor((Date.now() - lastUpdate) / 1000) : 0;
+  const timeSinceUpdate = lastUpdate > 0 ? Math.floor((now - lastUpdate) / 1000) : 0;
 
   return (
     <div className="bg-gray-900 rounded-lg p-6">

@@ -55,7 +55,7 @@
   --transition-slow: 480ms cubic-bezier(.4,.4,.2,1);
 
   /* Typography Scale */
-  --font-price: 40px;
+  --font-price: 32px;
   --font-heading: 28px;
   --font-subheading: 20px;
   --font-body: 14px;

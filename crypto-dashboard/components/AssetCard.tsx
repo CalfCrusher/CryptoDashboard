@@ -77,7 +77,12 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
 
       {/* Current Price */}
       <div className="mb-4">
-        <div className={`text-[56px] leading-none font-bold text-(--text-high) mb-2 smooth-number price-anim ${flashClass}`}>${formatPrice(currentPrice.price)}</div>
+        <div
+          className={`leading-none font-bold text-(--text-high) mb-2 smooth-number price-anim ${flashClass}`}
+          style={{ fontSize: 'var(--font-price)' }}
+        >
+          ${formatPrice(currentPrice.price)}
+        </div>
         <div className={`text-sm font-semibold ${priceChangeColor} flex items-center gap-2`}>
           {formatPercentage(currentPrice.changePercent24h)}
           <span className="text-gray-400 ml-2">

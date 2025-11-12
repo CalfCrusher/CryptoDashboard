@@ -2,7 +2,7 @@
 
 import { AssetAnalysis, MarketOverview } from '@/types';
 import { formatPercentage } from '@/lib/analysis';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 interface MarketInsightsProps {
   assets: AssetAnalysis[];
@@ -17,6 +17,17 @@ interface MarketInsightsProps {
  */
 export default function MarketInsights({ assets, marketOverview, missedUpdates, onAlertClick }: MarketInsightsProps) {
   const [showCorrelation, setShowCorrelation] = useState(false);
+  const [notifSupported, setNotifSupported] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
+  const deliveredRef = useRef<Map<string, number>>(new Map()); // key -> timestamp
+
+  // On mount, detect notification support and current permission
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifSupported(true);
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
 
   // Tunable thresholds for alerting
   const ALERTS = {
@@ -77,6 +88,31 @@ export default function MarketInsights({ assets, marketOverview, missedUpdates, 
     return items.sort((a,b) => b.priority - a.priority).slice(0, 20);
   }, [assets, missedUpdates]);
 
+  // Notify on new alerts (deduped with cooldown)
+  useEffect(() => {
+    if (!notifSupported || notifPermission !== 'granted') return;
+    const now = Date.now();
+    const COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
+    alerts.forEach(al => {
+      const key = `${al.kind}:${al.id}:${al.text}`;
+      const last = deliveredRef.current.get(key) || 0;
+      if (now - last < COOLDOWN_MS) return; // still cooling down
+      try {
+        // Fire and record
+        const title = `${al.symbol} — ${al.kind.replace('-', ' ').toUpperCase()}`;
+        const body = al.text;
+        new Notification(title, {
+          body,
+          // optional icon could be added here from /public if desired
+        });
+        deliveredRef.current.set(key, now);
+      } catch {
+        // ignore notification errors
+      }
+    });
+  }, [alerts, notifSupported, notifPermission]);
+
   const quick = useMemo(() => {
     const sortedByChange = [...assets].sort((a,b) => b.currentPrice.changePercent24h - a.currentPrice.changePercent24h);
     const positives = sortedByChange.filter(a => a.currentPrice.changePercent24h > 0);
@@ -96,7 +132,27 @@ export default function MarketInsights({ assets, marketOverview, missedUpdates, 
         <div className="glass-card p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-bold text-(--text-high) tracking-[-0.2px]">Alerts</h3>
-            <span className="text-xs text-(--text-low)">{alerts.length}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-(--text-low)">{alerts.length}</span>
+              {notifSupported && notifPermission !== 'granted' && (
+                <button
+                  type="button"
+                  className="text-[10px] px-2 py-1 rounded-md border"
+                  style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-high)', background: 'var(--bg-glass)' }}
+                  onClick={async () => {
+                    try {
+                      const perm = await Notification.requestPermission();
+                      setNotifPermission(perm);
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                  title="Enable desktop notifications"
+                >
+                  Enable desktop alerts
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1" role="list">
             {alerts.map((al, idx) => {
