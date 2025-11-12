@@ -17,17 +17,11 @@ interface MarketInsightsProps {
  */
 export default function MarketInsights({ assets, marketOverview, missedUpdates, onAlertClick }: MarketInsightsProps) {
   const [showCorrelation, setShowCorrelation] = useState(false);
-  const [notifSupported, setNotifSupported] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
+  const notifSupported = typeof window !== 'undefined' && 'Notification' in window;
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
   const deliveredRef = useRef<Map<string, number>>(new Map()); // key -> timestamp
-
-  // On mount, detect notification support and current permission
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotifSupported(true);
-      setNotifPermission(Notification.permission);
-    }
-  }, []);
 
   // Tunable thresholds for alerting
   const ALERTS = {

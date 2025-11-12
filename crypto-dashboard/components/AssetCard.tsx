@@ -5,7 +5,7 @@ import { formatPrice, formatPercentage, getSignalIcon } from '@/lib/analysis';
 import { useMemo, useRef, useEffect, useState } from 'react';
 import MomentumGauge from './MomentumGauge';
 import Sparkline from './Sparkline';
-import { getAssetIcon } from '@/lib/iconMap';
+import { BTCIcon, ETHTempIcon, BNBIcon, SOLIcon, XRPIcon, GenericCoinIcon } from '@/lib/iconMap';
 
 interface AssetCardProps {
   analysis: AssetAnalysis;
@@ -22,10 +22,13 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
     const prev = prevPriceRef.current;
     if (prev !== currentPrice.price) {
       const cls = currentPrice.price > prev ? 'flash-up scale-up' : 'flash-down scale-down';
-      setFlashClass(cls);
-      const t = setTimeout(() => setFlashClass(''), 2000);
+  const t1 = window.setTimeout(() => setFlashClass(cls), 0);
+  const t2 = window.setTimeout(() => setFlashClass(''), 2000);
       prevPriceRef.current = currentPrice.price;
-      return () => clearTimeout(t);
+      return () => {
+        if (t1) clearTimeout(t1);
+        if (t2) clearTimeout(t2);
+      };
     }
   }, [currentPrice.price]);
 
@@ -47,7 +50,24 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
 
   const priceChangeColor = currentPrice.changePercent24h >= 0 ? 'text-green-500' : 'text-red-500';
 
-  const Icon = getAssetIcon(asset.symbol);
+  // Pre-create icon element using static components to satisfy lint rule
+  const IconEl = useMemo(() => {
+    const sym = (asset.symbol || '').toUpperCase();
+    switch (sym) {
+      case 'BTC':
+        return <BTCIcon aria-label={`${asset.symbol} icon`} />;
+      case 'ETH':
+        return <ETHTempIcon aria-label={`${asset.symbol} icon`} />;
+      case 'BNB':
+        return <BNBIcon aria-label={`${asset.symbol} icon`} />;
+      case 'SOL':
+        return <SOLIcon aria-label={`${asset.symbol} icon`} />;
+      case 'XRP':
+        return <XRPIcon aria-label={`${asset.symbol} icon`} />;
+      default:
+        return <GenericCoinIcon aria-label={`${asset.symbol} icon`} />;
+    }
+  }, [asset.symbol]);
 
   return (
     <div
@@ -59,9 +79,7 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className="mt-1 opacity-70">
-            <Icon aria-label={`${asset.symbol} icon`} />
-          </div>
+          <div className="mt-1 opacity-70">{IconEl}</div>
           <div>
             <h2 className="text-2xl font-bold text-(--text-high) tracking-[-0.5px]">{asset.symbol}</h2>
             <p className="text-sm text-(--text-low)">{asset.name}</p>

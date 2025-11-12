@@ -116,28 +116,48 @@ export function useDashboardData() {
       // Filter out failed analyses
       let validAnalyses = assetAnalyses.filter((a): a is AssetAnalysis => a !== null);
 
-      // Debug overrides: allow forcing signals for quick testing without waiting
+      // Debug overrides: only apply when debug mode is explicitly enabled
+      // Debug mode is enabled if any of the following are true on the client:
+      //  - URL query contains ?debug=1
+      //  - localStorage('debug:tools') === '1'
+      //  - NEXT_PUBLIC_DEBUG_TOOLS === 'true'
+      let debugOverride: DashboardData['debugOverride'] = { active: false };
       if (typeof window !== 'undefined') {
-        const dbg = window.localStorage.getItem('debug:signal');
-        if (dbg && validAnalyses.length > 0) {
-          validAnalyses = validAnalyses.map((a, idx) => {
-            if (idx > 0) return a; // minimal: affect first asset only
-            if (dbg === 'strongBuy') {
-              return {
-                ...a,
-                signal: { ...a.signal, direction: 'LONG', strength: 'STRONG BUY', momentum: Math.max(a.signal.momentum, 85), confluenceCount: Math.max(a.signal.confluenceCount, 7), reasons: [...a.signal.reasons, 'Debug: forced STRONG BUY'] },
-                indicators: { ...a.indicators, momentum: Math.max(a.indicators.momentum, 85) },
-              };
+        const search = typeof window.location !== 'undefined' ? window.location.search : '';
+        const qs = new URLSearchParams(search);
+        const debugMode =
+          qs.get('debug') === '1' ||
+          window.localStorage.getItem('debug:tools') === '1' ||
+          process.env.NEXT_PUBLIC_DEBUG_TOOLS === 'true';
+
+        if (debugMode) {
+          const dbg = window.localStorage.getItem('debug:signal');
+          if (dbg && validAnalyses.length > 0) {
+            const affected = validAnalyses[0]?.asset?.symbol;
+            validAnalyses = validAnalyses.map((a, idx) => {
+              if (idx > 0) return a; // minimal: affect first asset only
+              if (dbg === 'strongBuy') {
+                return {
+                  ...a,
+                  signal: { ...a.signal, direction: 'LONG', strength: 'STRONG BUY', momentum: Math.max(a.signal.momentum, 85), confluenceCount: Math.max(a.signal.confluenceCount, 7), reasons: [...a.signal.reasons, 'Debug: forced STRONG BUY'] },
+                  indicators: { ...a.indicators, momentum: Math.max(a.indicators.momentum, 85) },
+                };
+              }
+              if (dbg === 'strongSell') {
+                return {
+                  ...a,
+                  signal: { ...a.signal, direction: 'SHORT', strength: 'STRONG SELL', momentum: Math.max(a.signal.momentum, 85), confluenceCount: Math.max(a.signal.confluenceCount, 7), reasons: [...a.signal.reasons, 'Debug: forced STRONG SELL'] },
+                  indicators: { ...a.indicators, momentum: Math.max(a.indicators.momentum, 85) },
+                };
+              }
+              return a;
+            });
+            debugOverride = { active: true, mode: dbg === 'strongBuy' ? 'strongBuy' : 'strongSell', affectedSymbol: affected };
+            if (process.env.NODE_ENV !== 'production') {
+              // eslint-disable-next-line no-console
+              console.warn('[Debug Override] Applied', debugOverride);
             }
-            if (dbg === 'strongSell') {
-              return {
-                ...a,
-                signal: { ...a.signal, direction: 'SHORT', strength: 'STRONG SELL', momentum: Math.max(a.signal.momentum, 85), confluenceCount: Math.max(a.signal.confluenceCount, 7), reasons: [...a.signal.reasons, 'Debug: forced STRONG SELL'] },
-                indicators: { ...a.indicators, momentum: Math.max(a.indicators.momentum, 85) },
-              };
-            }
-            return a;
-          });
+          }
         }
       }
 
@@ -160,7 +180,8 @@ export function useDashboardData() {
         marketOverview,
         lastUpdate: Date.now(),
         isLoading: false,
-        error: undefined
+        error: undefined,
+        debugOverride,
       });
 
       setMissedUpdates(0);

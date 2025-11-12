@@ -14,9 +14,10 @@ import TopAltcoinMovers from '@/components/TopAltcoinMovers';
 import DebugPanel from '@/components/DebugPanel';
 
 export default function Home() {
-  const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh } = useDashboardData();
+  const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh, debugOverride } = useDashboardData();
   const [selectedAsset, setSelectedAsset] = useState<AssetAnalysis | null>(null);
-  const [now, setNow] = useState<number>(Date.now());
+  // Lazy init to satisfy purity rule
+  const [now, setNow] = useState<number>(() => Date.now());
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [focusIndex, setFocusIndex] = useState<number>(0);
 
@@ -92,6 +93,11 @@ export default function Home() {
                 <div className="text-(--text-high) font-semibold" aria-label={`Last updated ${lastUpdate ? Math.max(0, Math.floor((now - lastUpdate)/1000)) + ' seconds ago' : 'unknown'}`}>
                   {lastUpdate ? `${Math.max(0, Math.floor((now - lastUpdate)/1000))}s ago` : '—'}
                 </div>
+                {debugOverride?.active && (
+                  <div className="px-2 py-1 rounded-md text-[10px] font-bold" style={{ background: 'rgba(59,130,246,0.18)', color: '#3B82F6'}}
+                    title={`Synthetic debug signal applied: ${debugOverride.mode} on ${debugOverride.affectedSymbol}`}
+                  >DEBUG OVERRIDE: {debugOverride.mode?.toUpperCase()} {debugOverride.affectedSymbol}</div>
+                )}
               </div>
             )}
           </div>
@@ -139,7 +145,7 @@ export default function Home() {
 
           <div className="space-y-8">
             <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
-              {assets.map((analysis, idx) => (
+              {assets.map((analysis) => (
                 <div key={analysis.asset.id} data-asset-card="true" tabIndex={0} aria-label={`Select ${analysis.asset.symbol}`}>
                   <AssetCard
                     analysis={analysis}

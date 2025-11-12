@@ -10,7 +10,7 @@ interface MarketOverviewCardProps {
 }
 
 export default function MarketOverviewCard({ overview, lastUpdate, missedUpdates }: MarketOverviewCardProps) {
-  const [now, setNow] = useState<number>(Date.now());
+  const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);

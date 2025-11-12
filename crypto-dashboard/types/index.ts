@@ -159,6 +159,11 @@ export interface DashboardData {
   lastUpdate: number;
   isLoading: boolean;
   error?: string;
+  debugOverride?: {
+    active: boolean;
+    mode?: 'strongBuy' | 'strongSell';
+    affectedSymbol?: string;
+  };
 }
 
 // API Response Types
