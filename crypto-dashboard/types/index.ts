@@ -124,6 +124,8 @@ export interface AssetAnalysis {
   marketStructure: MarketStructure;
   signal: TradingSignal;
   riskManagement: RiskManagement;
+  sparkline?: number[]; // last 24h close prices for micro-chart
+  recent5mChangePct?: number; // % change between last two 5m closes
   lastUpdate: number;
 }
 
@@ -136,7 +138,7 @@ export interface MarketOverview {
 }
 
 // Multi-Timeframe Data
-export type Timeframe = '1h' | '4h' | '1d';
+export type Timeframe = '5m' | '1h' | '4h' | '1d';
 
 export interface MultiTimeframeAnalysis {
   '1h': AssetAnalysis;

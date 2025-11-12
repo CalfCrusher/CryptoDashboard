@@ -1,26 +1,228 @@
 @import "tailwindcss";
 
+/* ----------------------------------------------------
+   Global Design Tokens (Dark-first with light fallback)
+   These align with the redesign spec in DESIGN_SYSTEM.md
+   Spacing grid: multiples of 4 (core) with emphasized 8/16 usage
+----------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base Surfaces */
+  --bg-base: #0F0F23; /* main app background */
+  --bg-alt: #111827; /* elevated surface */
+  --bg-elevated: #1a1f34; /* card hover / elevated */
+  --bg-glass: rgba(255,255,255,0.04);
+  --bg-glass-heavy: rgba(255,255,255,0.08);
+
+  /* Text Colors */
+  --text-high: #F5F7FA;
+  --text-med: rgba(245,247,250,0.8);
+  --text-low: rgba(245,247,250,0.55);
+
+  /* Primary Signal / Semantic */
+  --green-up: #10B981; /* uptrend */
+  --green-up-bright: #00D084; /* accent alt */
+  --red-down: #EF4444; /* downtrend */
+  --red-down-bright: #FF4757; /* accent alt */
+  --neutral: #64748B; /* neutral/muted */
+  --accent-yellow: #FFD60A; /* alerts */
+  --accent-cyan: #06B6D4; /* alternative accent */
+  --accent-blue: #3B82F6; /* informational */
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+  --outline-focus: #06B6D4;
+
+  /* Gradients */
+  --grad-momentum: linear-gradient(135deg,#EF4444 0%,#FFD60A 50%,#10B981 100%);
+  --grad-card-glow: radial-gradient(circle at 30% 20%, rgba(255,214,10,0.15), transparent 60%);
+
+  /* Shadows */
+  --shadow-soft: 0 4px 12px -2px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.5);
+  --shadow-hover: 0 6px 18px -4px rgba(0,0,0,0.55), 0 4px 8px rgba(0,0,0,0.4);
+  --shadow-focus: 0 0 0 2px rgba(6,182,212,0.4);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* Transitions */
+  --transition-fast: 120ms cubic-bezier(.4,.4,.2,1);
+  --transition-med: 240ms cubic-bezier(.4,.4,.2,1);
+  --transition-slow: 480ms cubic-bezier(.4,.4,.2,1);
+
+  /* Typography Scale */
+  --font-price: 40px;
+  --font-heading: 28px;
+  --font-subheading: 20px;
+  --font-body: 14px;
+  --font-micro: 12px;
+  --letter-spacing-tight: -.5px;
+  --letter-spacing-normal: .5px;
+
+  /* Skeleton */
+  --skeleton-base: #1e2537;
+  --skeleton-highlight: #2c3447;
+
+  /* Light mode fallbacks (will override in prefers-color-scheme) */
+  --bg-base-light: #ffffff;
+  --bg-alt-light: #f3f5f9;
+  --text-high-light: #0F172A;
+  --text-med-light: #1e293b;
+  --text-low-light: rgba(15,23,42,0.6);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Removed experimental @theme (Tailwind v4 inline theme not required); using CSS vars directly */
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-base: var(--bg-base-light);
+    --bg-alt: var(--bg-alt-light);
+    --text-high: var(--text-high-light);
+    --text-med: var(--text-med-light);
+    --text-low: var(--text-low-light);
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-med);
+  font-family: var(--font-geist-sans), Inter, Roboto, system-ui, sans-serif;
+  letter-spacing: var(--letter-spacing-normal);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Utility Classes ------------------------------------------------------- */
+.glass-card {
+  position: relative;
+  background: var(--bg-glass);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--transition-med), box-shadow var(--transition-med), background var(--transition-med), border-color var(--transition-med);
+}
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--grad-card-glow);
+  opacity: 0;
+  transition: opacity var(--transition-med);
+  pointer-events: none;
+}
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  background: var(--bg-glass-heavy);
+}
+.glass-card:hover::before { opacity: 1; }
+.glass-card:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* Signal Badge */
+.signal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: var(--font-micro);
+  font-weight: 700;
+  letter-spacing: .75px;
+  border-radius: var(--radius-pill);
+  background: var(--border-subtle);
+  color: var(--text-high);
+  position: relative;
+  overflow: hidden;
+}
+.signal-badge[data-signal="STRONG BUY"],
+.signal-badge[data-signal="BUY"] { background: linear-gradient(90deg,#00D084,#10B981); }
+.signal-badge[data-signal="STRONG SELL"],
+.signal-badge[data-signal="SELL"] { background: linear-gradient(90deg,#FF4757,#EF4444); }
+.signal-badge[data-signal="NEUTRAL"] { background: var(--neutral); }
+
+/* Momentum radial gauge container */
+.momentum-gauge {
+  --size: 92px;
+  width: var(--size);
+  height: var(--size);
+  position: relative;
+  border-radius: 50%;
+  background: conic-gradient(from 180deg, #EF4444 0%, #FFD60A 42%, #10B981 78%, #10B981 100%);
+  padding: 6px;
+  box-shadow: 0 0 0 1px var(--border-subtle), inset 0 0 24px -6px rgba(0,0,0,0.6);
+}
+.momentum-gauge > .inner {
+  position: absolute;
+  inset: 6px;
+  background: var(--bg-alt);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-med);
+}
+.momentum-gauge[data-level="low"] { filter: brightness(.85); }
+.momentum-gauge[data-level="high"] { box-shadow: 0 0 0 1px var(--accent-cyan), 0 0 18px -4px rgba(6,182,212,.6); }
+
+/* Micro sparkline container */
+.sparkline { height: 36px; width: 100%; }
+
+/* Skeleton Loading ------------------------------------------------------ */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--skeleton-base) 25%, var(--skeleton-highlight) 37%, var(--skeleton-base) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Price Flash Animations ------------------------------------------------ */
+@keyframes priceUp { 0% { color: var(--green-up); } 100% { color: var(--text-high); } }
+@keyframes priceDown { 0% { color: var(--red-down); } 100% { color: var(--text-high); } }
+.flash-up { animation: priceUp 2s ease; }
+.flash-down { animation: priceDown 2s ease; }
+
+/* Micro-interactions: scale on uptick/downtick (applied via JS) */
+.scale-up { transform: scale(1.02); }
+.scale-down { transform: scale(0.98); }
+.price-anim { transition: transform var(--transition-fast); will-change: transform; }
+
+/* Table row hover lift */
+table.data-table tbody tr { transition: transform var(--transition-fast), background var(--transition-fast); }
+table.data-table tbody tr:hover { transform: translateY(-2px); background: rgba(255,255,255,0.03); }
+
+/* Pulse for new signal */
+@keyframes pulseSignal { 0% { box-shadow: 0 0 0 0 rgba(255,214,10,0.6);} 70% { box-shadow: 0 0 0 12px rgba(255,214,10,0);} 100% { box-shadow: 0 0 0 0 rgba(255,214,10,0);} }
+.signal-pulse { animation: pulseSignal 1.8s var(--transition-med) forwards; }
+
+/* Smooth value transitions */
+.smooth-number { transition: color var(--transition-fast), transform var(--transition-fast); }
+.smooth-number[data-trend="up"] { color: var(--green-up); }
+.smooth-number[data-trend="down"] { color: var(--red-down); }
+
+/* Scrollbar minimal (desktop only) */
+@media (hover: hover) {
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg-alt); }
+  ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: var(--radius-pill); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+}
+
+/* Accessibility: Focus outline fallback for elements without visible style */
+*:focus-visible { outline: 2px solid var(--outline-focus); outline-offset: 2px; }
+
+/* Heading refinements */
+h1,h2,h3,h4 { letter-spacing: var(--letter-spacing-tight); color: var(--text-high); }
+p,span,div { letter-spacing: var(--letter-spacing-normal); }
+
+/* Data table styling improvements placeholder (will be refined) */
+table.data-table thead th { font-weight: 600; letter-spacing: .5px; font-size: 12px; text-transform: uppercase; }
+table.data-table tbody td { font-size: 13px; }

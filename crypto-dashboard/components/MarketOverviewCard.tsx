@@ -95,50 +95,7 @@ export default function MarketOverviewCard({ overview, lastUpdate, missedUpdates
         </div>
       </div>
 
-      {/* Correlation Matrix */}
-      {Object.keys(overview.correlationMatrix).length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold text-white mb-3">Correlation Matrix</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr>
-                  <th className="text-left text-gray-400 p-2"></th>
-                  {Object.keys(overview.correlationMatrix).map(symbol => (
-                    <th key={symbol} className="text-center text-gray-400 p-2">{symbol}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(overview.correlationMatrix).map(([symbol1, correlations]) => (
-                  <tr key={symbol1}>
-                    <td className="text-white font-bold p-2">{symbol1}</td>
-                    {Object.entries(correlations).map(([symbol2, correlation]) => {
-                      const corrValue = correlation as number;
-                      const color = 
-                        corrValue > 0.7 ? 'bg-green-600' :
-                        corrValue > 0.4 ? 'bg-green-700' :
-                        corrValue > 0 ? 'bg-gray-700' :
-                        corrValue > -0.4 ? 'bg-gray-700' :
-                        corrValue > -0.7 ? 'bg-red-700' :
-                        'bg-red-600';
-                      
-                      return (
-                        <td key={symbol2} className={`text-center p-2 ${color} text-white`}>
-                          {corrValue.toFixed(2)}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-2 text-xs text-gray-500">
-            Correlation: 1.0 = perfect positive, -1.0 = perfect negative, 0 = no correlation
-          </div>
-        </div>
-      )}
+      {/* Correlation Matrix moved to Sidebar (collapsible) */}
     </div>
   );
 }

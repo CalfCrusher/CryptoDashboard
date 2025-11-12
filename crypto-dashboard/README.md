@@ -40,6 +40,26 @@ RSI, MACD, ADX, ATR, Stochastic RSI, ROC, EMA/SMA, Bollinger Bands, OBV, Volume 
 
 See [TRADING_GUIDE.md](TRADING_GUIDE.md) for comprehensive usage documentation.
 
+## How the dashboard works
+
+Quick mental model of the inner workings and alert logic:
+
+- Data cadence: refreshes every 60s.
+- Sources:
+	- Prices/market metrics: CoinGecko (current/24h).
+	- OHLCV (analysis): Binance 1h (core indicators); Binance 5m (spike detection).
+	- 52w data: Binance daily.
+- Analysis: We compute indicators (RSI, MACD, ADX, MAs, ATR, momentum), market structure, risk, and a trade “signal” (LONG/SHORT/WAIT) with strength and confluence.
+- Alerts (what shows and why):
+	- Spike (5m): |Δ last two 5m closes| ≥ 0.5% → Spike Up/Down.
+	- Momentum: momentum ≥ 60.
+	- Confluence: confluenceCount ≥ 6.
+	- Strong Signal: “STRONG BUY/SELL”.
+	- Big 24h move: |24h change| ≥ 8%.
+	- System: missed updates.
+
+The Alerts card is hidden when empty; otherwise, each alert renders with a colored badge by type for fast scanning.
+
 ## Tech Stack
 
 Next.js 16 • TypeScript • Tailwind CSS • CoinGecko API • Binance API

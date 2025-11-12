@@ -55,7 +55,7 @@ export async function fetchMarketData(): Promise<CoinGeckoMarketData[]> {
  */
 export async function fetchOHLCVData(
   coinId: string,
-  interval: '1h' | '4h' | '1d',
+  interval: '5m' | '1h' | '4h' | '1d',
   limit: number = 100
 ): Promise<PriceData[]> {
   try {

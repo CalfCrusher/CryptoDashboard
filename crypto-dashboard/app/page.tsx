@@ -1,37 +1,107 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import AssetCard from '@/components/AssetCard';
 import SignalTable from '@/components/SignalTable';
 import MomentumHeatMap from '@/components/MomentumHeatMap';
 import MarketOverviewCard from '@/components/MarketOverviewCard';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import DetailedAnalysisModal from '@/components/DetailedAnalysisModal';
 import { AssetAnalysis } from '@/types';
+import MarketInsights from '@/components/MarketInsights';
 
 export default function Home() {
   const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh } = useDashboardData();
   const [selectedAsset, setSelectedAsset] = useState<AssetAnalysis | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number>(0);
+
+  // Determine column count based on viewport to support arrow navigation
+  const columns = useMemo(() => {
+    if (typeof window === 'undefined') return 1;
+    const w = window.innerWidth;
+    if (w >= 1280) return 5; // xl
+    if (w >= 1024) return 3; // lg
+    if (w >= 768) return 2;  // md
+    return 1;                // base
+  }, []);
+
+  // Keyboard shortcuts: r to refresh, arrows to move focus, Enter to open
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      if (isTyping) return;
+
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        if (!isLoading) refresh();
+      }
+      if (!assets || assets.length === 0) return;
+
+      const cards = gridRef.current?.querySelectorAll<HTMLElement>('[data-asset-card="true"]');
+      if (!cards || cards.length === 0) return;
+
+      if (['ArrowRight','ArrowLeft','ArrowUp','ArrowDown'].includes(e.key)) {
+        e.preventDefault();
+        let next = focusIndex;
+        if (e.key === 'ArrowRight') next = Math.min(focusIndex + 1, assets.length - 1);
+        if (e.key === 'ArrowLeft') next = Math.max(focusIndex - 1, 0);
+        if (e.key === 'ArrowDown') next = Math.min(focusIndex + columns, assets.length - 1);
+        if (e.key === 'ArrowUp') next = Math.max(focusIndex - columns, 0);
+        setFocusIndex(next);
+        cards[next]?.focus();
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const item = assets[focusIndex];
+        if (item) setSelectedAsset(item);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [assets, columns, focusIndex, isLoading, refresh]);
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8">
+    <div className="min-h-screen p-4 md:p-8" style={{ background: 'var(--bg-base)' }}>
       <header className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-white mb-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-end gap-4">
+            <h1 className="text-(--text-high) font-bold tracking-[-0.5px]" style={{ fontSize: 32 }}>
               Crypto Momentum Dashboard
             </h1>
-            <p className="text-gray-400">
-              Professional-grade perpetual futures trading analysis
-            </p>
+            {marketOverview && (
+              <div className="hidden md:flex items-center gap-4 text-sm">
+                <div className="text-(--text-low)">BTC Dom</div>
+                <div className="text-(--text-high) font-semibold" aria-label={`BTC dominance ${marketOverview.btcDominance.toFixed(1)} percent`}>{marketOverview.btcDominance.toFixed(2)}%</div>
+                <div className="text-(--text-low)">Market</div>
+                <div className="text-(--text-high) font-semibold" aria-label={`Market stance ${marketOverview.altseasonIndicator >= 66 ? 'Risk-On' : marketOverview.altseasonIndicator <= 33 ? 'Risk-Off' : 'Mixed'}`}>
+                  {marketOverview.altseasonIndicator >= 66 ? 'Risk-On' : marketOverview.altseasonIndicator <= 33 ? 'Risk-Off' : 'Mixed'}
+                </div>
+                <div className="text-(--text-low)">Updated</div>
+                <div className="text-(--text-high) font-semibold" aria-label={`Last updated ${lastUpdate ? Math.max(0, Math.floor((Date.now() - lastUpdate)/1000)) + ' seconds ago' : 'unknown'}`}>
+                  {lastUpdate ? `${Math.max(0, Math.floor((Date.now() - lastUpdate)/1000))}s ago` : '—'}
+                </div>
+              </div>
+            )}
           </div>
-          <button
-            onClick={refresh}
-            disabled={isLoading}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
-          >
-            {isLoading ? 'Refreshing...' : 'Refresh Now'}
-          </button>
+          <div className="flex items-center gap-3">
+            {missedUpdates > 0 && (
+              <div className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(255,214,10,0.12)', color: 'var(--accent-yellow)' }}>
+                Missed: {missedUpdates}
+              </div>
+            )}
+            <button
+              onClick={refresh}
+              disabled={isLoading}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold"
+              style={{ background: 'var(--bg-alt)', color: 'var(--text-high)', border: '1px solid var(--border-subtle)' }}
+            >
+              <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Refreshing' : 'Refresh Now'}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -58,18 +128,31 @@ export default function Home() {
             missedUpdates={missedUpdates}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {assets.map((analysis) => (
-              <AssetCard
-                key={analysis.asset.id}
-                analysis={analysis}
-                onClick={() => setSelectedAsset(analysis)}
-              />
-            ))}
-          </div>
+          <div className="space-y-8">
+            <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
+              {assets.map((analysis, idx) => (
+                <div key={analysis.asset.id} data-asset-card="true" tabIndex={0} aria-label={`Select ${analysis.asset.symbol}`}>
+                  <AssetCard
+                    analysis={analysis}
+                    onClick={() => setSelectedAsset(analysis)}
+                  />
+                </div>
+              ))}
+            </div>
 
-          <SignalTable analyses={assets} />
-          <MomentumHeatMap analyses={assets} />
+            <MarketInsights
+              assets={assets}
+              marketOverview={marketOverview}
+              missedUpdates={missedUpdates}
+              onAlertClick={(assetId) => {
+                const found = assets.find(a => a.asset.id === assetId);
+                if (found) setSelectedAsset(found);
+              }}
+            />
+
+            <SignalTable analyses={assets} />
+            <MomentumHeatMap analyses={assets} />
+          </div>
         </div>
       )}
 
@@ -78,8 +161,10 @@ export default function Home() {
         onClose={() => setSelectedAsset(null)}
       />
 
-      <footer className="mt-12 text-center text-gray-500 text-sm pb-8">
-        <p>Auto-refresh: Every 60 seconds | Data sources: CoinGecko & Binance</p>
+      {/* Sidebar removed — insights are full-width */}
+
+      <footer className="mt-12 text-center text-(--text-low) text-sm pb-8 opacity-70">
+        <p>Auto-refresh: Every 60 seconds • Data sources: CoinGecko & Binance</p>
       </footer>
     </div>
   );

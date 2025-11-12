@@ -38,13 +38,14 @@ export function useDashboardData() {
       // Fetch market data for all assets
       const marketData = await fetchMarketData();
       
-      // Fetch OHLCV data and analyze each asset
+      // Fetch OHLCV data (primary timeframe + 5m for spike detection) and analyze each asset
       const assetAnalysisPromises = TOP_ASSETS.map(async (asset) => {
         try {
           const [ohlcvData, weekData] = await Promise.all([
             fetchOHLCVData(asset.id, '1h', 200),
             fetch52WeekData(asset.id)
           ]);
+          const recent5m = await fetchOHLCVData(asset.id, '5m', 3).catch(() => [] as any);
 
           const marketInfo = marketData.find(m => m.id === asset.id);
           
@@ -64,7 +65,7 @@ export function useDashboardData() {
             volume24h: marketInfo.total_volume
           };
 
-          return analyzeAsset(
+          const analysis = analyzeAsset(
             {
               id: asset.id,
               symbol: asset.symbol,
@@ -74,6 +75,16 @@ export function useDashboardData() {
             currentPrice,
             ohlcvData
           );
+
+          // Append recent 5m spike metric
+          if (recent5m && (recent5m as any[]).length >= 2) {
+            const prev = (recent5m as any[])[(recent5m as any[]).length - 2].close;
+            const last = (recent5m as any[])[(recent5m as any[]).length - 1].close;
+            if (prev > 0) {
+              analysis.recent5mChangePct = ((last - prev) / prev) * 100;
+            }
+          }
+          return analysis;
         } catch (error) {
           console.error(`Error analyzing ${asset.symbol}:`, error);
           return null;

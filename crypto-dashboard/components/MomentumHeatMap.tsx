@@ -30,8 +30,8 @@ export default function MomentumHeatMap({ analyses }: MomentumHeatMapProps) {
 
   return (
     <div className="bg-gray-900 rounded-lg p-6">
-      <h2 className="text-xl font-bold text-white mb-4">Momentum Heat Map</h2>
-      <div className="flex flex-wrap gap-4 justify-center items-center">
+  <h2 className="text-xl font-bold text-white mb-4">Momentum Heat Map</h2>
+  <div className="flex flex-wrap gap-4 justify-center items-center">
         {analyses.map((analysis) => {
           const { asset, signal, indicators, currentPrice } = analysis;
           const heatColor = getHeatColor(signal.momentum);

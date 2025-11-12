@@ -1,8 +1,11 @@
 'use client';
 
 import { AssetAnalysis } from '@/types';
-import { formatPrice, formatPercentage, getSignalColor, getSignalIcon } from '@/lib/analysis';
-import { useMemo } from 'react';
+import { formatPrice, formatPercentage, getSignalIcon } from '@/lib/analysis';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import MomentumGauge from './MomentumGauge';
+import Sparkline from './Sparkline';
+import { getAssetIcon } from '@/lib/iconMap';
 
 interface AssetCardProps {
   analysis: AssetAnalysis;
@@ -10,13 +13,27 @@ interface AssetCardProps {
 }
 
 export default function AssetCard({ analysis, onClick }: AssetCardProps) {
-  const { asset, currentPrice, signal, riskManagement, indicators, marketStructure } = analysis;
+  const { asset, currentPrice, signal, riskManagement, indicators, marketStructure, sparkline } = analysis;
+
+  const prevPriceRef = useRef<number>(currentPrice.price);
+  const [flashClass, setFlashClass] = useState<string>('');
+
+  useEffect(() => {
+    const prev = prevPriceRef.current;
+    if (prev !== currentPrice.price) {
+      const cls = currentPrice.price > prev ? 'flash-up scale-up' : 'flash-down scale-down';
+      setFlashClass(cls);
+      const t = setTimeout(() => setFlashClass(''), 2000);
+      prevPriceRef.current = currentPrice.price;
+      return () => clearTimeout(t);
+    }
+  }, [currentPrice.price]);
 
   // Determine card border color based on trend
   const borderColor = useMemo(() => {
-    if (marketStructure.trend === 'uptrend') return 'border-green-500';
-    if (marketStructure.trend === 'downtrend') return 'border-red-500';
-    return 'border-yellow-500';
+    if (marketStructure.trend === 'uptrend') return 'shadow-[0_0_0_1px_rgba(16,185,129,0.35)]';
+    if (marketStructure.trend === 'downtrend') return 'shadow-[0_0_0_1px_rgba(239,68,68,0.35)]';
+    return 'shadow-[0_0_0_1px_rgba(100,116,139,0.35)]';
   }, [marketStructure.trend]);
 
   // Momentum gauge color
@@ -30,28 +47,38 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
 
   const priceChangeColor = currentPrice.changePercent24h >= 0 ? 'text-green-500' : 'text-red-500';
 
+  const Icon = getAssetIcon(asset.symbol);
+
   return (
     <div
       onClick={onClick}
-      className={`bg-gray-900 border-2 ${borderColor} rounded-lg p-6 hover:bg-gray-800 transition-all cursor-pointer shadow-lg hover:shadow-xl`}
+      className={`glass-card cursor-pointer p-6 relative overflow-hidden ${borderColor}`}
+      tabIndex={0}
+      aria-label={`Asset ${asset.symbol} ${signal.strength} signal ${signal.direction} price ${formatPrice(currentPrice.price)}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white">{asset.symbol}</h2>
-          <p className="text-sm text-gray-400">{asset.name}</p>
+        <div className="flex items-start gap-3">
+          <div className="mt-1 opacity-70">
+            <Icon aria-label={`${asset.symbol} icon`} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-(--text-high) tracking-[-0.5px]">{asset.symbol}</h2>
+            <p className="text-sm text-(--text-low)">{asset.name}</p>
+          </div>
         </div>
-        <div className={`px-3 py-1 rounded-full text-xs font-bold ${getSignalColor(signal.strength)}`}>
+        <div
+          className={`signal-badge ${signal.confluenceCount > 6 ? 'signal-pulse' : ''}`}
+          data-signal={signal.strength}
+        >
           {signal.strength}
         </div>
       </div>
 
       {/* Current Price */}
       <div className="mb-4">
-        <div className="text-3xl font-bold text-white mb-1">
-          ${formatPrice(currentPrice.price)}
-        </div>
-        <div className={`text-sm font-semibold ${priceChangeColor}`}>
+        <div className={`text-[56px] leading-none font-bold text-(--text-high) mb-2 smooth-number price-anim ${flashClass}`}>${formatPrice(currentPrice.price)}</div>
+        <div className={`text-sm font-semibold ${priceChangeColor} flex items-center gap-2`}>
           {formatPercentage(currentPrice.changePercent24h)}
           <span className="text-gray-400 ml-2">
             ${currentPrice.change24h >= 0 ? '+' : ''}{currentPrice.change24h.toFixed(2)}
@@ -59,64 +86,64 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
         </div>
       </div>
 
-      {/* Momentum Gauge */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-gray-400">Momentum Score</span>
-          <span className={`text-sm font-bold ${getMomentumColor(signal.momentum)}`}>
-            {signal.momentum}/100
-          </span>
-        </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all ${
-              signal.momentum >= 50 ? 'bg-green-500' : 'bg-red-500'
-            }`}
-            style={{ width: `${signal.momentum}%` }}
-          />
+      {/* Momentum Gauge + Sparkline */}
+      <div className="flex items-center justify-between mb-6 gap-4">
+        <MomentumGauge value={signal.momentum} confluence={`${signal.confluenceCount}/8`} />
+        <div className="flex-1">
+          {sparkline ? <Sparkline data={sparkline} /> : <div className="sparkline skeleton" />}
         </div>
       </div>
 
       {/* Signal Direction */}
       <div className="mb-4 flex items-center justify-between">
         <span className="text-xs text-gray-400">Direction</span>
-        <div className="flex items-center">
-          <span className="text-2xl mr-2">{getSignalIcon(signal.direction)}</span>
-          <span className={`text-lg font-bold ${
-            signal.direction === 'LONG' ? 'text-green-500' : 
-            signal.direction === 'SHORT' ? 'text-red-500' : 
-            'text-gray-400'
-          }`}>
-            {signal.direction}
-          </span>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl mr-1">{getSignalIcon(signal.direction)}</span>
+          {signal.direction === 'WAIT' ? (
+            <span
+              className="signal-badge"
+              style={{ background: 'var(--neutral)' }}
+              title="Waiting for conditions — informational only"
+            >
+              NO SETUP
+            </span>
+          ) : (
+            <span
+              className={`text-lg font-bold ${
+                signal.direction === 'LONG' ? 'text-green-500' :
+                signal.direction === 'SHORT' ? 'text-red-500' :
+                'text-gray-400'
+              }`}
+            >
+              {signal.direction}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Confluence & Confidence */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      {/* Confluence & Confidence & Risk/Reward */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
-          <div className="text-xs text-gray-400 mb-1">Confluence</div>
-          <div className="text-xl font-bold text-white">{signal.confluenceCount}</div>
+          <div className="text-xs text-(--text-low) mb-1">Confluence</div>
+          <div className="text-xl font-bold text-(--text-high)">{signal.confluenceCount}</div>
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-1">Confidence</div>
-          <div className="text-xl font-bold text-white">{signal.confidenceScore}/10</div>
+          <div className="text-xs text-(--text-low) mb-1">Confidence</div>
+          <div className="text-xl font-bold text-(--text-high)">{signal.confidenceScore}/10</div>
         </div>
-      </div>
-
-      {/* Risk/Reward */}
-      {signal.direction !== 'WAIT' && (
-        <div className="mb-4">
-          <div className="text-xs text-gray-400 mb-1">Risk/Reward Ratio</div>
-          <div className={`text-lg font-bold ${
-            riskManagement.riskRewardRatio >= 2 ? 'text-green-500' : 
-            riskManagement.riskRewardRatio >= 1.5 ? 'text-yellow-500' : 
-            'text-red-500'
-          }`}>
-            1:{riskManagement.riskRewardRatio.toFixed(2)}
+        {signal.direction !== 'WAIT' && (
+          <div>
+            <div className="text-xs text-(--text-low) mb-1">Risk/Reward</div>
+            <div className={`text-xl font-bold ${
+              riskManagement.riskRewardRatio >= 2 ? 'text-green-500' : 
+              riskManagement.riskRewardRatio >= 1.5 ? 'text-yellow-500' : 
+              'text-red-500'
+            }`}>
+              1:{riskManagement.riskRewardRatio.toFixed(2)}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Key Indicators */}
       <div className="border-t border-gray-700 pt-3 space-y-2">
@@ -151,8 +178,8 @@ export default function AssetCard({ analysis, onClick }: AssetCardProps) {
       </div>
 
       {/* Click indicator */}
-      <div className="text-center text-xs text-gray-500 mt-3">
-        Click for detailed analysis
+      <div className="text-center text-xs text-(--text-low) mt-4 opacity-60">
+        Click / Enter for detailed analysis
       </div>
     </div>
   );

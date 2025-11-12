@@ -105,6 +105,7 @@ export function analyzeAsset(
     marketStructure,
     signal,
     riskManagement,
+    sparkline: closePrices.slice(-24),
     lastUpdate: Date.now()
   };
 }
