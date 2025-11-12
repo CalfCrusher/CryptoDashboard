@@ -11,6 +11,7 @@ import DetailedAnalysisModal from '@/components/DetailedAnalysisModal';
 import { AssetAnalysis } from '@/types';
 import MarketInsights from '@/components/MarketInsights';
 import TopAltcoinMovers from '@/components/TopAltcoinMovers';
+import DebugPanel from '@/components/DebugPanel';
 
 export default function Home() {
   const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh } = useDashboardData();
@@ -176,6 +177,9 @@ export default function Home() {
       <footer className="mt-12 text-center text-(--text-low) text-sm pb-8 opacity-70">
         <p>Auto-refresh: Every 60 seconds • Data sources: CoinGecko & Binance</p>
       </footer>
+
+      {/* Debug tools (visible when ?debug=1 or NEXT_PUBLIC_DEBUG_TOOLS=true or localStorage('debug:tools')==='1') */}
+      <DebugPanel refresh={refresh} />
     </div>
   );
 }

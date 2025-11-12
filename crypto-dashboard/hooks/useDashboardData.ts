@@ -110,9 +110,34 @@ export function useDashboardData() {
       }
 
       // Filter out failed analyses
-      const validAnalyses = assetAnalyses.filter((a): a is AssetAnalysis => a !== null);
+      let validAnalyses = assetAnalyses.filter((a): a is AssetAnalysis => a !== null);
 
-      const totalMarketCap = validAnalyses.reduce((sum, a) => sum + a.currentPrice.marketCap, 0);
+      // Debug overrides: allow forcing signals for quick testing without waiting
+      if (typeof window !== 'undefined') {
+        const dbg = window.localStorage.getItem('debug:signal');
+        if (dbg && validAnalyses.length > 0) {
+          validAnalyses = validAnalyses.map((a, idx) => {
+            if (idx > 0) return a; // minimal: affect first asset only
+            if (dbg === 'strongBuy') {
+              return {
+                ...a,
+                signal: { ...a.signal, direction: 'LONG', strength: 'STRONG BUY', momentum: Math.max(a.signal.momentum, 85), confluenceCount: Math.max(a.signal.confluenceCount, 7), reasons: [...a.signal.reasons, 'Debug: forced STRONG BUY'] },
+                indicators: { ...a.indicators, momentum: Math.max(a.indicators.momentum, 85) },
+              };
+            }
+            if (dbg === 'strongSell') {
+              return {
+                ...a,
+                signal: { ...a.signal, direction: 'SHORT', strength: 'STRONG SELL', momentum: Math.max(a.signal.momentum, 85), confluenceCount: Math.max(a.signal.confluenceCount, 7), reasons: [...a.signal.reasons, 'Debug: forced STRONG SELL'] },
+                indicators: { ...a.indicators, momentum: Math.max(a.indicators.momentum, 85) },
+              };
+            }
+            return a;
+          });
+        }
+      }
+
+  const totalMarketCap = validAnalyses.reduce((sum, a) => sum + a.currentPrice.marketCap, 0);
 
       const marketOverview: MarketOverview = {
         btcDominance,
