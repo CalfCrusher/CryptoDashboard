@@ -178,6 +178,16 @@ export function useDashboardData() {
   // Initial fetch
   useEffect(() => {
     fetchAllData();
+    // Listen for debug signal changes to re-run analysis quickly without waiting interval
+    const handler = () => fetchAllData();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('debug-signal-change', handler);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('debug-signal-change', handler);
+      }
+    };
   }, [fetchAllData]);
 
   // Auto-refresh every minute

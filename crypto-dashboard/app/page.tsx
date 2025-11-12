@@ -73,7 +73,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: 'var(--bg-base)' }}>
+  <div className="min-h-screen p-4 md:p-8" style={{ background: 'var(--bg-base)', position: 'relative' }}>
       <header className="mb-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-end gap-4">

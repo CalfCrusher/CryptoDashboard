@@ -18,7 +18,12 @@ function isDebugEnabled() {
 export default function DebugPanel({ refresh }: DebugPanelProps) {
   const [enabled, setEnabled] = useState(false);
   const [notif, setNotif] = useState<NotificationPermission>('default');
-  const mode = useMemo(() => (typeof window !== 'undefined' ? window.localStorage.getItem('debug:signal') || '' : ''), []);
+  const [mode, setModeState] = useState<string>('');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setModeState(window.localStorage.getItem('debug:signal') || '');
+    }
+  }, []);
 
   useEffect(() => {
     setEnabled(isDebugEnabled());
@@ -33,6 +38,9 @@ export default function DebugPanel({ refresh }: DebugPanelProps) {
     if (typeof window === 'undefined') return;
     if (m) window.localStorage.setItem('debug:signal', m);
     else window.localStorage.removeItem('debug:signal');
+    setModeState(m || '');
+    // Fire custom event so hook can react immediately without needing a fetch
+    window.dispatchEvent(new Event('debug-signal-change'));
     refresh?.();
   };
 
@@ -50,9 +58,10 @@ export default function DebugPanel({ refresh }: DebugPanelProps) {
   };
 
   return (
-    <div style={{ position: 'fixed', right: 12, bottom: 12, zIndex: 50 }}>
+    <div style={{ position: 'fixed', right: 12, bottom: 12, zIndex: 1000, pointerEvents: 'auto' }}>
       <div className="rounded-lg shadow-lg p-3 text-[11px]" style={{ background: 'var(--bg-glass)', border: '1px solid var(--border-subtle)' }}>
         <div className="font-bold mb-2" style={{ color: 'var(--text-high)' }}>Debug Tools</div>
+        <div className="mb-2 text-[10px]" style={{ color: 'var(--text-low)' }}>Mode: {mode || 'none'}</div>
         <div className="flex flex-wrap gap-2 mb-2">
           <button className="px-2 py-1 rounded-md border" onClick={() => setMode('strongBuy')} style={{ borderColor: 'var(--border-subtle)' }}>Force STRONG BUY</button>
           <button className="px-2 py-1 rounded-md border" onClick={() => setMode('strongSell')} style={{ borderColor: 'var(--border-subtle)' }}>Force STRONG SELL</button>
