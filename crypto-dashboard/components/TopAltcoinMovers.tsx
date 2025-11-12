@@ -8,9 +8,10 @@ import { formatPrice } from '@/lib/analysis';
 interface TopAltcoinMoversProps {
   title?: string;
   limit?: number;
+  lastUpdate?: number; // dashboard tick to re-fetch on cadence
 }
 
-export default function TopAltcoinMovers({ title = 'Top Altcoin Movers', limit = 12 }: TopAltcoinMoversProps) {
+export default function TopAltcoinMovers({ title = 'Top Altcoin Movers', limit = 12, lastUpdate }: TopAltcoinMoversProps) {
   const [items, setItems] = useState<CoinGeckoMarketData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,7 +33,7 @@ export default function TopAltcoinMovers({ title = 'Top Altcoin Movers', limit =
       }
     })();
     return () => { mounted = false; };
-  }, [limit]);
+  }, [limit, lastUpdate]);
 
   return (
     <section aria-label="Top Altcoin Movers" className="glass-card p-4">

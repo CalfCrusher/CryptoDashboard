@@ -158,7 +158,7 @@ export default function Home() {
               }}
             />
 
-            <TopAltcoinMovers />
+            <TopAltcoinMovers lastUpdate={lastUpdate} />
 
             <SignalTable analyses={assets} />
             <MomentumHeatMap analyses={assets} />
