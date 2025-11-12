@@ -133,13 +133,13 @@ export async function fetchOHLCVData(
       }
     });
     
-    return response.data.map((kline: any[]) => ({
+    return response.data.map((kline: unknown[]) => ({
       timestamp: kline[0],
-      open: parseFloat(kline[1]),
-      high: parseFloat(kline[2]),
-      low: parseFloat(kline[3]),
-      close: parseFloat(kline[4]),
-      volume: parseFloat(kline[5])
+      open: parseFloat(kline[1] as string),
+      high: parseFloat(kline[2] as string),
+      low: parseFloat(kline[3] as string),
+      close: parseFloat(kline[4] as string),
+      volume: parseFloat(kline[5] as string)
     }));
   } catch (error) {
     console.error(`Error fetching OHLCV data for ${coinId}:`, error);
@@ -166,9 +166,9 @@ export async function fetch52WeekData(coinId: string): Promise<{ high: number; l
       }
     });
     
-    const prices = response.data.map((kline: any[]) => ({
-      high: parseFloat(kline[2]),
-      low: parseFloat(kline[3])
+    const prices = response.data.map((kline: unknown[]) => ({
+      high: parseFloat(kline[2] as string),
+      low: parseFloat(kline[3] as string)
     }));
     
     const high = Math.max(...prices.map((p: { high: number; low: number }) => p.high));

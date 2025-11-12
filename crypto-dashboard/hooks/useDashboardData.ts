@@ -45,7 +45,7 @@ export function useDashboardData() {
             fetchOHLCVData(asset.id, '1h', 200),
             fetch52WeekData(asset.id)
           ]);
-          const recent5m = await fetchOHLCVData(asset.id, '5m', 3).catch(() => [] as any);
+          const recent5m = await fetchOHLCVData(asset.id, '5m', 3).catch(() => [] as []);
 
           const marketInfo = marketData.find(m => m.id === asset.id);
           
@@ -77,9 +77,9 @@ export function useDashboardData() {
           );
 
           // Append recent 5m spike metric
-          if (recent5m && (recent5m as any[]).length >= 2) {
-            const prev = (recent5m as any[])[(recent5m as any[]).length - 2].close;
-            const last = (recent5m as any[])[(recent5m as any[]).length - 1].close;
+          if (recent5m && Array.isArray(recent5m) && recent5m.length >= 2) {
+            const prev = recent5m[recent5m.length - 2].close;
+            const last = recent5m[recent5m.length - 1].close;
             if (prev > 0) {
               analysis.recent5mChangePct = ((last - prev) / prev) * 100;
             }

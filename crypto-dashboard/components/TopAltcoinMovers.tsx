@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CoinGeckoMarketData } from '@/types';
-import { fetchTopAltcoinMovers } from '@/lib/api';
+// Fetch via server-side API route to avoid client-side CORS and add retries/caching
 import { formatPrice } from '@/lib/analysis';
 
 interface TopAltcoinMoversProps {
@@ -21,11 +21,14 @@ export default function TopAltcoinMovers({ title = 'Top Altcoin Movers', limit =
     (async () => {
       try {
         setLoading(true);
-        const res = await fetchTopAltcoinMovers({ limit });
+        // Fetch via server-side proxy route to avoid client-side CORS/Cloudflare issues
+        const resp = await fetch(`/api/top-movers?limit=${limit}`);
         if (!mounted) return;
-        setItems(res);
+        if (!resp.ok) throw new Error('Failed to load');
+        const json = await resp.json();
+        setItems(json.data ?? []);
         setError(null);
-      } catch (e) {
+      } catch {
         if (!mounted) return;
         setError('Failed to load movers');
       } finally {
