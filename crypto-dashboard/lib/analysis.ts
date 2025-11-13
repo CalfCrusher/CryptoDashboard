@@ -249,3 +249,41 @@ export function getSignalIcon(direction: string): string {
       return '—';
   }
 }
+
+/**
+ * Compute a simple 0-100 risk score from derivatives components.
+ * Higher open interest Z and higher funding Z imply higher risk (crowded leverage).
+ * Optional oiAccel (relative change) slightly boosts the score when positive.
+ */
+export function computeRiskScore(params: {
+  oiZ?: number;        // Z-score of open interest (higher => riskier)
+  fundingZ?: number;   // Z-score of funding rate (higher => more long bias)
+  oiAccel?: number;    // Relative OI change over a short window (e.g., vs 3 intervals ago)
+}) {
+  const clip = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
+  const to01FromZ = (z?: number) => {
+    if (typeof z !== 'number' || !Number.isFinite(z)) return 0.5; // neutral
+    const c = clip(z, -3, 3);
+    return (c + 3) / 6; // [-3,3] -> [0,1]
+  };
+  const to01Accel = (a?: number) => {
+    if (typeof a !== 'number' || !Number.isFinite(a)) return 0.5;
+    const c = clip(a, -0.2, 0.2); // cap +/-20%
+    return (c + 0.2) / 0.4; // [-0.2,0.2] -> [0,1]
+  };
+
+  const sOi = to01FromZ(params.oiZ);
+  const sFr = to01FromZ(params.fundingZ);
+  const sAc = to01Accel(params.oiAccel);
+
+  const score01 = 0.5 * sOi + 0.4 * sFr + 0.1 * sAc;
+  const score = Math.round(clip(score01 * 100, 0, 100));
+  return {
+    score,
+    components: {
+      oiPressure: Math.round(sOi * 100),
+      fundingHeat: Math.round(sFr * 100),
+      accel: Math.round(sAc * 100)
+    }
+  };
+}

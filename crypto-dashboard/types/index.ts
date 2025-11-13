@@ -164,6 +164,8 @@ export interface DashboardData {
     mode?: 'strongBuy' | 'strongSell';
     affectedSymbol?: string;
   };
+  // Optional aggregate risk metrics derived from derivatives data
+  riskMetrics?: RiskMetrics;
 }
 
 // API Response Types
@@ -195,4 +197,20 @@ export interface BinanceKlineData {
   trades: number;
   takerBuyBaseAssetVolume: string;
   takerBuyQuoteAssetVolume: string;
+}
+
+// Aggregate risk metrics from derivatives (OI & funding), 0-100 scale
+export interface RiskMetrics {
+  score: number; // 0-100 higher = riskier leverage conditions
+  components: {
+    oiPressure: number;   // 0-100
+    fundingHeat: number;  // 0-100
+    accel: number;        // 0-100
+  };
+  updatedAt?: number;
+  details?: {
+    oiZAvg?: number;
+    fundingZAvg?: number;
+    oiAccelAvg?: number;
+  };
 }

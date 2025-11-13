@@ -6,6 +6,7 @@ import AssetCard from '@/components/AssetCard';
 import SignalTable from '@/components/SignalTable';
 import MomentumHeatMap from '@/components/MomentumHeatMap';
 import MarketOverviewCard from '@/components/MarketOverviewCard';
+import RiskRegimeCard from '@/components/RiskRegimeCard';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import DetailedAnalysisModal from '@/components/DetailedAnalysisModal';
 import { AssetAnalysis } from '@/types';
@@ -14,7 +15,7 @@ import TopAltcoinMovers from '@/components/TopAltcoinMovers';
 import DebugPanel from '@/components/DebugPanel';
 
 export default function Home() {
-  const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh, debugOverride } = useDashboardData();
+  const { assets, marketOverview, lastUpdate, missedUpdates, isLoading, error, refresh, debugOverride, riskMetrics } = useDashboardData();
   const [selectedAsset, setSelectedAsset] = useState<AssetAnalysis | null>(null);
   // Lazy init to satisfy purity rule
   const [now, setNow] = useState<number>(() => Date.now());
@@ -142,6 +143,9 @@ export default function Home() {
             lastUpdate={lastUpdate}
             missedUpdates={missedUpdates}
           />
+
+          {/* Leverage risk card */}
+          {riskMetrics && <RiskRegimeCard risk={riskMetrics} />}
 
           <div className="space-y-8">
             <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">

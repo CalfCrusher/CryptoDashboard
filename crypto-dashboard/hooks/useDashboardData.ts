@@ -96,12 +96,14 @@ export function useDashboardData() {
       });
 
       // Fetch market overview data
-      const [assetAnalyses, correlationMatrix, altseasonIndicator, fearGreedResp] = await Promise.all([
+      const [assetAnalyses, correlationMatrix, altseasonIndicator, fearGreedResp, derivativesResp] = await Promise.all([
         Promise.all(assetAnalysisPromises),
         buildCorrelationMatrix(),
         calculateAltseasonIndicator(),
         // fetch fear-greed from our server API to avoid CORS and allow caching
-        fetch('/api/fear-greed').then(r => r.ok ? r.json() : Promise.reject(new Error('FGN fetch failed'))).catch(() => ({ data: { value: 50, classification: 'Neutral', updatedAt: Date.now() }}))
+        fetch('/api/fear-greed').then(r => r.ok ? r.json() : Promise.reject(new Error('FGN fetch failed'))).catch(() => ({ data: { value: 50, classification: 'Neutral', updatedAt: Date.now() }})),
+        // derivatives (OI + funding)
+        fetch('/api/derivatives').then(r => r.ok ? r.json() : Promise.reject(new Error('Derivatives fetch failed'))).catch(() => null)
       ]);
 
       // BTC dominance with fallback using current marketData
@@ -175,6 +177,22 @@ export function useDashboardData() {
         } : undefined
       };
 
+      // Build optional risk metrics from derivatives response
+      const riskMetrics = derivativesResp && derivativesResp.aggregate ? {
+        score: Number(derivativesResp.aggregate.riskScore) || 0,
+        components: {
+          oiPressure: Math.round(((Number(derivativesResp.aggregate.oiZAvg ?? 0) + 3) / 6) * 100),
+          fundingHeat: Math.round(((Number(derivativesResp.aggregate.fundingZAvg ?? 0) + 3) / 6) * 100),
+          accel: Math.round(((Number(derivativesResp.aggregate.oiAccelAvg ?? 0) + 0.2) / 0.4) * 100),
+        },
+        updatedAt: Number(derivativesResp.updatedAt) || Date.now(),
+        details: {
+          oiZAvg: derivativesResp.aggregate.oiZAvg,
+          fundingZAvg: derivativesResp.aggregate.fundingZAvg,
+          oiAccelAvg: derivativesResp.aggregate.oiAccelAvg,
+        }
+      } : undefined;
+
       setData({
         assets: validAnalyses,
         marketOverview,
@@ -182,6 +200,7 @@ export function useDashboardData() {
         isLoading: false,
         error: undefined,
         debugOverride,
+        riskMetrics,
       });
 
       setMissedUpdates(0);
