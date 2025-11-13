@@ -10,6 +10,7 @@ Professional cryptocurrency momentum analysis dashboard for perpetual futures tr
 - **Risk Management** - Automatic stop-loss and take-profit calculations
 - **Momentum Scoring** - 1-100 trend strength indicator
 - **Market Overview** - BTC Dominance, Altseason Indicator, Correlation Matrix
+- **Leverage Risk (Derivatives)** - Real-time OI + Funding based Risk Score (0–100) with built-in legend
 - **Dark Mode UI** - Professional trading interface
 
 ## Quick Start
@@ -59,6 +60,10 @@ The dashboard uses a **confluence-based signal generation system** that analyzes
 │   ↓                                                              │
 │ fetch52WeekData() → CoinGecko Market Chart                      │
 │   • 52-week high/low for context                                │
+│   ↓                                                              │
+│ /api/derivatives → Binance Futures (server route)               │
+│   • Open Interest (BTC/ETH) + Perp Funding (latest)             │
+│   • In-memory history → Z-scores + OI acceleration → Risk 0–100 │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -130,6 +135,7 @@ The dashboard uses a **confluence-based signal generation system** that analyzes
 │ 5. UI RENDERING (components/)                                   │
 ├─────────────────────────────────────────────────────────────────┤
 │ • MarketOverviewCard: BTC dominance, altseason, correlation     │
+│ • RiskRegimeCard: Leverage risk gauge (0–100) + legend          │
 │ • AssetCard (×5): Individual crypto cards with gauges           │
 │ • SignalTable: All signals with entry/exit levels               │
 │ • MomentumHeatMap: Visual momentum strength grid                │
@@ -280,7 +286,7 @@ npm run lint
 
 **Frontend:** Next.js 16 (App Router) • React 19 • TypeScript 5 • Tailwind CSS 4
 
-**Data Sources:** CoinGecko API (market data) • Binance Public API (OHLCV)
+**Data Sources:** CoinGecko API (market data) • Binance Public API (OHLCV) • Binance Futures (Open Interest & Funding via /api/derivatives)
 
 **Charts:** Recharts • Lightweight Charts
 
