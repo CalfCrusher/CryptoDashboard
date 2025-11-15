@@ -2,10 +2,12 @@
 
 These rules are intended as general, project‑agnostic foundations for healthy, maintainable software work. Apply them to any repository, library, or automated agent that contributes to the codebase.
 
-## Rule 1 — Commit Early, Commit Often
-Make small, frequent commits with clear, descriptive messages. Keep each commit focused and atomic so changes are easy to review, bisect, and revert if needed. Use feature branches for larger work and rebase/squash as appropriate before merging.
+## Rule 1 — Commit Early, Commit Often, and Push Immediately
+Make small, frequent commits with clear, descriptive messages. Keep each commit focused and atomic so changes are easy to review, bisect, and revert if needed. **Push commits to the remote repository immediately after committing** to make work visible and accessible to the team. Use feature branches for larger work and rebase/squash as appropriate before merging to main.
 
-Why: Frequent, well‑scoped commits are the best checkpoints for development and debugging.
+**For AI agents**: After running `git commit`, immediately run `git push origin <branch>` unless explicitly instructed otherwise by the user.
+
+Why: Frequent, well‑scoped commits that are immediately shared are the best checkpoints for development, debugging, and collaboration across machines.
 
 ## Rule 2 — Understand the System Before Changing It
 Before implementing new features or large changes, take the time to understand the architecture, data flow, and dependencies. Read the relevant code and tests, consult existing documentation, and ask teammates or open an issue if something is unclear.
@@ -13,7 +15,9 @@ Before implementing new features or large changes, take the time to understand t
 Why: Changes made without context risk introducing bugs and technical debt.
 
 ## Rule 3 — Run Checks Before Committing or Deploying
-Always run tests, linters, type checks, security scans, and any project‑specific validations locally (and rely on CI) before merging or deploying. For systems interacting with external services (e.g., trading, infra), include simulation or staging runs as part of validation.
+Always run tests, linters, type checks, security scans, and any project‑specific validations locally (and rely on CI) before committing or deploying. Verify there are **zero compilation errors** and **zero lint errors** before making any commit. For systems interacting with external services (e.g., trading, infra), include simulation or staging runs as part of validation.
+
+**For AI agents**: Before running `git commit`, use available tools to check for errors. Never commit broken code.
 
 Why: Automated and manual checks catch regressions early and protect production systems.
 
