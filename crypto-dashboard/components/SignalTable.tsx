@@ -11,7 +11,7 @@ interface SignalTableProps {
 export default function SignalTable({ analyses }: SignalTableProps) {
   return (
     <div className="glass-card p-6 overflow-x-auto">
-      <h2 className="text-xl font-bold text-(--text-high) mb-4 tracking-[-0.5px]">Trading Signals</h2>
+      <h2 className="text-xl font-bold text-(--text-high) mb-4 tracking-[-0.5px]">Momentum Signals</h2>
       <table className="w-full text-sm data-table">
         <thead>
           <tr className="text-(--text-low) border-b" style={{ borderColor: 'var(--border-subtle)' }}>

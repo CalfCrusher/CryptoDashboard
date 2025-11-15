@@ -166,7 +166,7 @@ export default function TradeSignals() {
       <div className="bg-linear-to-br from-slate-800/30 to-slate-900/30 rounded-xl p-6 border border-slate-700/50">
         <div className="flex items-center gap-2 mb-4">
           <CircleStackIcon className="text-blue-400 w-6 h-6" />
-          <h2 className="text-xl font-bold text-white">Trade Signals</h2>
+          <h2 className="text-xl font-bold text-white">Bollinger Band Setups</h2>
         </div>
         <div className="text-center py-8 text-slate-400">Loading signals...</div>
       </div>
@@ -178,7 +178,7 @@ export default function TradeSignals() {
       <div className="bg-linear-to-br from-slate-800/30 to-slate-900/30 rounded-xl p-6 border border-slate-700/50">
         <div className="flex items-center gap-2 mb-4">
           <ExclamationTriangleIcon className="text-amber-400 w-6 h-6" />
-          <h2 className="text-xl font-bold text-white">Trade Signals</h2>
+          <h2 className="text-xl font-bold text-white">Bollinger Band Setups</h2>
         </div>
         <div className="text-center py-8 text-red-400">Error: {error}</div>
       </div>
@@ -192,7 +192,7 @@ export default function TradeSignals() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <CircleStackIcon className="text-blue-400 w-6 h-6" />
-          <h2 className="text-xl font-bold text-white">Trade Signals</h2>
+          <h2 className="text-xl font-bold text-white">Bollinger Band Setups</h2>
         </div>
         <div className="text-xs text-slate-400">
           Updated: {new Date(data.timestamp).toLocaleTimeString()}
