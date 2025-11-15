@@ -12,6 +12,7 @@ import DetailedAnalysisModal from '@/components/DetailedAnalysisModal';
 import { AssetAnalysis } from '@/types';
 import MarketInsights from '@/components/MarketInsights';
 import TopAltcoinMovers from '@/components/TopAltcoinMovers';
+import TradeSignals from '@/components/TradeSignals';
 import DebugPanel from '@/components/DebugPanel';
 
 export default function Home() {
@@ -170,6 +171,8 @@ export default function Home() {
             />
 
             <TopAltcoinMovers lastUpdate={lastUpdate} />
+
+            <TradeSignals />
 
             <SignalTable analyses={assets} />
             <MomentumHeatMap analyses={assets} />
