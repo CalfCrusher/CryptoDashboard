@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
+import { resilientFetchJson, TtlCache, mapPool } from '@/lib/http';
 
 const BINANCE_API = 'https://api.binance.com/api/v3';
+const BINANCE_ALT_HOSTS = ['api1.binance.com', 'api2.binance.com'];
+const REQUEST_TIMEOUT_MS = 8_000;
+const RETRIES = 2;
+const CONCURRENCY = 6; // limit parallel symbol analyses to avoid network saturation
 
 // Symbols to analyze
 const SYMBOLS = [
@@ -112,16 +117,20 @@ function calculateRSI(closes: number[], period = 14): number | null {
 
 // Fetch klines from Binance
 async function fetchKlines(symbol: string, limit = 30): Promise<any[]> {
-  const response = await fetch(`${BINANCE_API}/klines?symbol=${symbol}&interval=1d&limit=${limit}`);
-  if (!response.ok) throw new Error(`Failed to fetch klines for ${symbol}`);
-  return response.json();
+  return resilientFetchJson<any[]>(
+    `${BINANCE_API}/klines?symbol=${encodeURIComponent(symbol)}&interval=1d&limit=${limit}`,
+    { timeoutMs: REQUEST_TIMEOUT_MS, retries: RETRIES },
+    BINANCE_ALT_HOSTS
+  );
 }
 
 // Fetch 24hr ticker
 async function fetch24hrTicker(symbol: string): Promise<any> {
-  const response = await fetch(`${BINANCE_API}/ticker/24hr?symbol=${symbol}`);
-  if (!response.ok) throw new Error(`Failed to fetch ticker for ${symbol}`);
-  return response.json();
+  return resilientFetchJson<any>(
+    `${BINANCE_API}/ticker/24hr?symbol=${encodeURIComponent(symbol)}`,
+    { timeoutMs: REQUEST_TIMEOUT_MS, retries: RETRIES },
+    BINANCE_ALT_HOSTS
+  );
 }
 
 // Calculate trade setup
@@ -174,12 +183,26 @@ function calculateTradeSetup(
 }
 
 // Analyze a single symbol
+// Lightweight per-route cache to reduce repeated hits during active sessions
+const klinesCache = new TtlCache<any[]>(60_000); // 60s
+const tickerCache = new TtlCache<any>(30_000); // 30s
+
 async function analyzeSymbol(symbol: string, alertThreshold = 1.0, volumeMultiplier = 1.2): Promise<TradeSignal | null> {
   try {
-    const [rawKlines, ticker24h] = await Promise.all([
-      fetchKlines(symbol, 30),
-      fetch24hrTicker(symbol)
-    ]);
+    // Use short-lived caches to avoid hammering Binance
+    const kKey = `k:${symbol}`;
+    const tKey = `t:${symbol}`;
+    let rawKlines = klinesCache.get(kKey);
+    let ticker24h = tickerCache.get(tKey);
+
+    if (!rawKlines) {
+      rawKlines = await fetchKlines(symbol, 30);
+      klinesCache.set(kKey, rawKlines);
+    }
+    if (!ticker24h) {
+      ticker24h = await fetch24hrTicker(symbol);
+      tickerCache.set(tKey, ticker24h);
+    }
 
     const candles = rawKlines.map((k: any) => ({
       close: parseFloat(k[4]),
@@ -276,9 +299,8 @@ export async function GET(req: Request) {
     const symbolsParam = url.searchParams.get('symbols');
     const symbols = symbolsParam ? symbolsParam.split(',') : SYMBOLS;
 
-    const results = await Promise.all(
-      symbols.map(symbol => analyzeSymbol(symbol.toUpperCase()))
-    );
+    // Limit concurrency to avoid timeouts / connection saturation
+    const results = await mapPool(symbols.map(s => s.toUpperCase()), CONCURRENCY, (symbol) => analyzeSymbol(symbol));
 
     const signals = results.filter((r): r is TradeSignal => r !== null);
 
