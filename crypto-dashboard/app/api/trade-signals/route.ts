@@ -5,7 +5,8 @@ const BINANCE_API = 'https://api.binance.com/api/v3';
 // Symbols to analyze
 const SYMBOLS = [
   'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'ADAUSDT',
-  'DOGEUSDT', 'XRPUSDT', 'AVAXUSDT', 'LINKUSDT', 'MATICUSDT'
+  'DOGEUSDT', 'XRPUSDT', 'AVAXUSDT', 'LINKUSDT', 'MATICUSDT',
+  'ZECUSDT'
 ];
 
 interface BollingerBands {
